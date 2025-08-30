@@ -3,438 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crossword Puzzle</title>
+    <title>BVisionRY Crossword Puzzle</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2eT0Yx+c/4zQ/3h5j+0Ie/e3P+wYk/kG+4eA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0F3460;
-            color: #F8F8F8;
+            background-color: #f0f4f8;
         }
-        .puzzle-grid {
-            border-collapse: collapse;
-            table-layout: fixed;
-            margin: 0 auto;
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(11, minmax(0, 1fr));
+            grid-template-rows: repeat(11, minmax(0, 1fr));
+            gap: 1px;
+            background-color: #cbd5e1;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .puzzle-grid td {
-            width: 40px;
-            height: 40px;
-            text-align: center;
-            vertical-align: middle;
-            border: 1px solid #FFC107;
-            padding: 0;
+        .grid-cell {
+            width: 100%;
+            padding-top: 100%; /* Makes the cell a perfect square */
             position: relative;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .puzzle-grid input {
+        .grid-cell.black {
+            background-color: #1e293b;
+        }
+        .grid-cell.white {
+            background-color: #ffffff;
+        }
+        .grid-cell.correct {
+            background-color: #a7f3d0; /* Green */
+        }
+        .grid-cell.incorrect {
+            background-color: #fecaca; /* Red */
+        }
+        .cell-input {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             text-align: center;
+            font-size: 1.5rem;
             text-transform: uppercase;
-            font-size: 1.25rem;
             font-weight: 600;
+            color: #1e293b;
+            background-color: transparent;
             border: none;
             outline: none;
-            background-color: transparent;
-            -webkit-appearance: none;
-            -moz-appearance: textfield;
-            color: #0F3460;
-        }
-        .puzzle-grid .bg-black {
-            background-color: #0F3460;
-            border: 1px solid #0F3460;
-        }
-        .puzzle-grid .bg-white {
-            background-color: #F8F8F8;
+            cursor: pointer;
         }
         .cell-number {
             position: absolute;
             top: 2px;
             left: 2px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: #0F3460;
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #475569;
         }
-        .clue-list li {
-            margin-bottom: 0.5rem;
-            cursor: pointer;
+        .btn-base {
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .clue-list li.completed {
-            text-decoration: line-through;
-            color: #FFC107;
-        }
-        .button {
-            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
-            transform: translateY(0);
-        }
-        .button:hover:not(:disabled) {
+        .btn-base:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .button:active:not(:disabled) {
-            transform: translateY(1px);
+        .btn-base:active {
+            transform: translateY(0);
             box-shadow: none;
-        }
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-        }
-        .highlight-clue {
-            background-color: #FFC107 !important;
-        }
-        .correct-cell {
-            border: 2px solid #FFC107;
-        }
-        .incorrect-cell {
-            border: 2px solid #ef4444;
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="max-w-7xl w-full">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-center tracking-tight" style="color: #FFC107;">
-            Crossword Puzzle
-        </h1>
-        
-        <div class="p-6 mt-8 shadow-xl rounded-2xl" style="background-color: #FFC107; color: #0F3460;">
-            <h2 class="text-2xl font-bold mb-4">Instructions</h2>
-            <p class="text-lg">The objective is to fill the white squares of the grid with the correct answers to the clues. The words will intersect with one another to form the puzzle.</p>
-            <div class="mt-4">
-                <p><strong>1. Read the Clues:</strong> Start with either the "Across" or "Down" clues. The number on the clue corresponds to a numbered square on the grid.</p>
-                <p class="mt-2"><strong>2. Find the Starting Point:</strong> Locate the matching numbered square on the grid for the clue you want to solve.</p>
-                <p class="mt-2"><strong>3. Enter the Word:</strong> Type one letter into each white square. The word for an "Across" clue runs horizontally (left to right), and the word for a "Down" clue runs vertically (top to bottom).</p>
-                <p class="mt-2"><strong>4. Use Intersections:</strong> The letters you fill in for one word will help you solve the words that cross it.</p>
-                <p class="mt-2"><strong>5. Check Your Answers:</strong> When you think you've solved the puzzle, click the **Check Answers** button. It will highlight correct letters in green and incorrect letters in red.</p>
-                <p class="mt-2"><strong>6. Get a Hint:</strong> If you're stuck, click the **Reveal 'I'** button to automatically fill in all instances of the letter 'I' in the puzzle.</p>
-                <p class="mt-2"><strong>7. Reset:</strong> To start over, click the **Reset** button.</p>
-            </div>
-        </div>
+<body class="bg-gray-100 text-gray-800 flex flex-col items-center p-6 min-h-screen">
 
-        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full mt-8">
-            <!-- Puzzle Grid Container -->
-            <div id="crossword-container" class="flex-grow flex items-center justify-center p-4 bg-white shadow-xl rounded-2xl">
-                <!-- The puzzle grid will be generated here by JavaScript -->
+    <div class="max-w-4xl w-full flex flex-col items-center bg-white rounded-xl shadow-lg p-6 md:p-10 mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-2 text-indigo-700">BVisionRY Crossword</h1>
+        <p class="text-center text-gray-500 mb-6 md:mb-8">Fill the grid to test your knowledge!</p>
+        
+        <div class="flex flex-col md:flex-row w-full justify-between items-start space-y-8 md:space-y-0 md:space-x-8">
+            <!-- Grid container -->
+            <div class="w-full md:w-1/2 flex items-center justify-center">
+                <div id="crossword-grid" class="grid-container rounded-lg max-w-sm w-full aspect-square"></div>
             </div>
 
             <!-- Clues and Controls Container -->
-            <div class="flex flex-col gap-8 flex-grow lg:flex-grow-0 lg:w-96 p-6 shadow-xl rounded-2xl" style="background-color: #FFC107; color: #0F3460;">
-                <div>
-                    <h2 class="text-2xl font-bold mb-4">Across</h2>
-                    <ol id="across-clues" class="clue-list"></ol>
-                </div>
-                
-                <div>
-                    <h2 class="text-2xl font-bold mb-4">Down</h2>
-                    <ol id="down-clues" class="clue-list"></ol>
+            <div class="w-full md:w-1/2 flex flex-col space-y-6">
+                <!-- Clues -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <h2 class="text-xl font-semibold mb-3 text-indigo-600">Across</h2>
+                    <ol class="list-decimal list-inside space-y-1 text-gray-700">
+                        <li>The name of our first module and mindset.</li>
+                        <li>The difference between challenge and obstacle.</li>
+                    </ol>
+                    <h2 class="text-xl font-semibold mt-6 mb-3 text-indigo-600">Down</h2>
+                    <ol class="list-decimal list-inside space-y-1 text-gray-700">
+                        <li>What has a powerful impact on your success.</li>
+                    </ol>
                 </div>
 
-                <div class="flex flex-col gap-4">
-                    <button id="check-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #0F3460; color: #F8F8F8;">
-                        Check Answers
+                <!-- Instructions -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <h2 class="text-xl font-semibold mb-3 text-indigo-600">Instructions</h2>
+                    <p class="text-sm text-gray-700">
+                        Read the clues to solve the puzzle. The word for an "Across" clue runs horizontally, and "Down" runs vertically. Use the intersection letters to help you solve other words.
+                    </p>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="flex flex-col space-y-4">
+                    <button id="check-answers" class="btn-base px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold text-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        <i class="fas fa-check-circle mr-2"></i> Check Answers
                     </button>
-                    <button id="reveal-i-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #0F3460; color: #F8F8F8; display: none;">
-                        Reveal 'I'
+                    <button id="get-hint" class="btn-base px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold text-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+                        <i class="fas fa-lightbulb mr-2"></i> Reveal 'I'
                     </button>
-                    <button id="reset-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #F8F8F8; color: #0F3460;">
-                        Reset
+                    <button id="reset-puzzle" class="btn-base px-6 py-3 rounded-xl bg-red-600 text-white font-semibold text-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                        <i class="fas fa-sync-alt mr-2"></i> Reset
                     </button>
                 </div>
             </div>
         </div>
-
-        <!-- Message Box for feedback -->
-        <div id="message-box" class="message-box hidden p-6 font-bold rounded-2xl shadow-2xl z-50 transition-all duration-500 text-center">
-            <!-- Messages will be displayed here -->
-        </div>
-
     </div>
 
     <script>
-        // Define the puzzle data
         const puzzleData = {
-            width: 12,
-            height: 12,
-            words: [
-                {
-                    word: "FEELING",
-                    clue: "The difference between challenge and obstacle.",
-                    direction: "across",
-                    startRow: 0,
-                    startCol: 0,
-                    number: 1
-                },
-                {
-                    word: "ENTREPRENEUR",
-                    clue: "The name of our first module and mindset.",
-                    direction: "across",
-                    startRow: 2,
-                    startCol: 0,
-                    number: 2
-                },
-                {
-                    word: "ENVIRONMENT",
-                    clue: "What has a powerful impact on your success.",
-                    direction: "down",
-                    startRow: 0,
-                    startCol: 1,
-                    number: 3
-                }
-            ]
+            across: {
+                1: { answer: "ENTREPRENEUR", row: 0, col: 0 },
+                2: { answer: "FEELING", row: 8, col: 4 }
+            },
+            down: {
+                3: { answer: "ENVIRONMENT", row: 0, col: 2 }
+            }
         };
 
-        const crosswordContainer = document.getElementById('crossword-container');
-        const acrossCluesList = document.getElementById('across-clues');
-        const downCluesList = document.getElementById('down-clues');
-        const checkButton = document.getElementById('check-button');
-        const revealIButton = document.getElementById('reveal-i-button');
-        const resetButton = document.getElementById('reset-button');
-        const messageBox = document.getElementById('message-box');
+        const grid = [
+            ['E', 'N', 'E', 'N', 'T', 'R', 'E', 'P', 'R', 'E', 'N', 'E', 'U', 'R'],
+            ['', '', 'N', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'V', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'I', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'R', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'O', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'N', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'M', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'E', '', '', '', 'F', 'E', 'E', 'L', 'I', 'N', 'G'],
+            ['', '', 'N', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', '', 'T', '', '', '', '', '', '', '', '', '', '', ''],
+        ];
 
-        let highlightedCells = [];
+        const gridElement = document.getElementById('crossword-grid');
+        const checkButton = document.getElementById('check-answers');
+        const hintButton = document.getElementById('get-hint');
+        const resetButton = document.getElementById('reset-puzzle');
 
-        // Function to create the grid from the puzzle data
+        // Function to create the puzzle grid
         function createGrid() {
-            const grid = Array.from({ length: puzzleData.height }, () =>
-                Array(puzzleData.width).fill(null)
-            );
-
-            // Populate the grid with word data (numbers and orientation)
-            puzzleData.words.forEach(wordData => {
-                let r = wordData.startRow;
-                let c = wordData.startCol;
-
-                if (grid[r][c] === null) {
-                    grid[r][c] = { number: wordData.number };
-                } else {
-                    grid[r][c].number = wordData.number;
-                }
-
-                for (let i = 0; i < wordData.word.length; i++) {
-                    if (wordData.direction === "across") {
-                        grid[r][c + i] = grid[r][c + i] || {};
-                        grid[r][c + i].wordAcross = wordData.word;
-                    } else { // "down"
-                        grid[r + i][c] = grid[r + i][c] || {};
-                        grid[r + i][c].wordDown = wordData.word;
-                    }
-                }
-            });
-
-            // Create the HTML table
-            const table = document.createElement('table');
-            table.className = "puzzle-grid rounded-xl overflow-hidden";
-
-            for (let r = 0; r < puzzleData.height; r++) {
-                const row = document.createElement('tr');
-                for (let c = 0; c < puzzleData.width; c++) {
-                    const cell = document.createElement('td');
-                    const cellData = grid[r][c];
-
-                    if (cellData) {
+            gridElement.innerHTML = ''; // Clear previous grid
+            const cellSize = 40; // Size of each cell in pixels
+            gridElement.style.gridTemplateColumns = `repeat(13, ${cellSize}px)`;
+            gridElement.style.gridTemplateRows = `repeat(11, ${cellSize}px)`;
+        
+            for (let r = 0; r < grid.length; r++) {
+                for (let c = 0; c < grid[r].length; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `grid-cell rounded-sm relative`;
+        
+                    if (grid[r][c] !== '') {
+                        cell.classList.add('white');
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.maxLength = 1;
-                        input.className = "puzzle-cell";
+                        input.className = 'cell-input rounded-sm';
                         input.dataset.row = r;
                         input.dataset.col = c;
-                        
-                        if (cellData.number) {
-                            const numberSpan = document.createElement('span');
-                            numberSpan.className = "cell-number";
-                            numberSpan.textContent = cellData.number;
-                            cell.appendChild(numberSpan);
-                        }
-                        cell.classList.add('bg-white');
                         cell.appendChild(input);
                     } else {
-                        cell.className = "bg-black";
+                        cell.classList.add('black');
                     }
-
-                    row.appendChild(cell);
-                }
-                table.appendChild(row);
-            }
-
-            crosswordContainer.appendChild(table);
-        }
-
-        // Function to create the clue lists
-        function createClueLists() {
-            const acrossClues = puzzleData.words.filter(word => word.direction === "across");
-            const downClues = puzzleData.words.filter(word => word.direction === "down");
-
-            acrossClues.sort((a, b) => a.number - b.number);
-            downClues.sort((a, b) => a.number - b.number);
-
-            acrossClues.forEach(clue => {
-                const li = document.createElement('li');
-                li.id = `clue-across-${clue.number}`;
-                li.textContent = `${clue.number}. ${clue.clue}`;
-                li.dataset.clueNumber = clue.number;
-                li.dataset.direction = 'across';
-                acrossCluesList.appendChild(li);
-            });
-
-            downClues.forEach(clue => {
-                const li = document.createElement('li');
-                li.id = `clue-down-${clue.number}`;
-                li.textContent = `${clue.number}. ${clue.clue}`;
-                li.dataset.clueNumber = clue.number;
-                li.dataset.direction = 'down';
-                downCluesList.appendChild(li);
-            });
-        }
-
-        // Function to highlight cells based on a clue click
-        function highlightCells(clueNumber, direction) {
-            clearHighlighting();
-            
-            const wordData = puzzleData.words.find(w => w.number == clueNumber && w.direction === direction);
-            if (!wordData) return;
-
-            for (let i = 0; i < wordData.word.length; i++) {
-                const r = wordData.startRow + (direction === "down" ? i : 0);
-                const c = wordData.startCol + (direction === "across" ? i : 0);
-                const cell = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                if (cell) {
-                    cell.classList.add('highlight-clue');
-                    highlightedCells.push(cell);
+        
+                    // Add clue numbers
+                    if (r === puzzleData.across[1].row && c === puzzleData.across[1].col) {
+                        const number = document.createElement('span');
+                        number.className = 'cell-number';
+                        number.textContent = '1';
+                        cell.appendChild(number);
+                    }
+                    if (r === puzzleData.across[2].row && c === puzzleData.across[2].col) {
+                        const number = document.createElement('span');
+                        number.className = 'cell-number';
+                        number.textContent = '2';
+                        cell.appendChild(number);
+                    }
+                    if (r === puzzleData.down[3].row && c === puzzleData.down[3].col) {
+                        const number = document.createElement('span');
+                        number.className = 'cell-number';
+                        number.textContent = '3';
+                        cell.appendChild(number);
+                    }
+        
+                    gridElement.appendChild(cell);
                 }
             }
         }
         
         // Function to check the answers
         function checkAnswers() {
+            const inputs = document.querySelectorAll('.cell-input');
             let allCorrect = true;
 
-            // Clear previous highlighting
-            document.querySelectorAll('.puzzle-cell').forEach(input => {
-                input.classList.remove('correct-cell', 'incorrect-cell');
-            });
+            inputs.forEach(input => {
+                const row = parseInt(input.dataset.row);
+                const col = parseInt(input.dataset.col);
+                const value = input.value.toUpperCase();
+                const correctLetter = grid[row][col];
 
-            puzzleData.words.forEach(wordData => {
-                let wordCorrect = true;
-
-                for (let i = 0; i < wordData.word.length; i++) {
-                    const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
-                    const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
-                    const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-
-                    if (input) {
-                        const userChar = input.value.toUpperCase();
-                        const correctChar = wordData.word[i].toUpperCase();
-
-                        if (userChar === correctChar) {
-                            input.classList.add('correct-cell');
-                        } else {
-                            input.classList.add('incorrect-cell');
-                            wordCorrect = false;
-                            allCorrect = false;
-                        }
-                    } else {
-                        wordCorrect = false;
-                        allCorrect = false;
-                    }
-                }
-                
-                if (wordCorrect) {
-                    const clueElement = document.getElementById(`clue-${wordData.direction}-${wordData.number}`);
-                    if (clueElement) {
-                        clueElement.classList.add('completed');
-                    }
+                input.parentNode.classList.remove('correct', 'incorrect');
+                if (value === correctLetter) {
+                    input.parentNode.classList.add('correct');
+                } else {
+                    input.parentNode.classList.add('incorrect');
+                    allCorrect = false;
                 }
             });
-
-            if (allCorrect) {
-                showMessage("Congratulations!", "bg-green-500", "Share with your network!");
-                revealIButton.style.display = 'block';
-                checkButton.disabled = true;
-                checkButton.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                showMessage("Try again!", "bg-red-500");
-            }
         }
-        
-        // Function to reveal the letter 'I'
-        function revealI() {
-            puzzleData.words.forEach(wordData => {
-                for (let i = 0; i < wordData.word.length; i++) {
-                    if (wordData.word[i].toUpperCase() === 'I') {
-                        const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
-                        const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
-                        const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                        if (input) {
-                            input.value = 'I';
-                            input.classList.add('correct-cell');
-                            input.disabled = true;
-                        }
-                    }
+
+        // Function to provide a hint
+        function getHint() {
+            const inputs = document.querySelectorAll('.cell-input');
+            inputs.forEach(input => {
+                const row = parseInt(input.dataset.row);
+                const col = parseInt(input.dataset.col);
+                const correctLetter = grid[row][col];
+                if (correctLetter.toUpperCase() === 'I') {
+                    input.value = 'I';
                 }
             });
-            showMessage("The letter 'I' has been revealed.", "bg-blue-500");
-        }
-        
-        // Function to show a temporary message
-        function showMessage(message, colorClass, secondaryMessage = "") {
-            messageBox.innerHTML = `<span class="text-xl">${message}</span>`;
-            if (secondaryMessage) {
-                messageBox.innerHTML += `<br><span class="text-sm mt-2">${secondaryMessage}</span>`;
-            }
-            messageBox.className = `message-box p-6 font-bold rounded-2xl shadow-2xl z-50 transition-all duration-500 ${colorClass}`;
-            messageBox.classList.remove('hidden');
-
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 3000); // Hide after 3 seconds
-        }
-
-        // Function to clear any highlighting on the grid
-        function clearHighlighting() {
-            document.querySelectorAll('.highlight-clue').forEach(cell => cell.classList.remove('highlight-clue'));
         }
 
         // Function to reset the puzzle
         function resetPuzzle() {
-            const inputs = document.querySelectorAll('.puzzle-cell');
+            const inputs = document.querySelectorAll('.cell-input');
             inputs.forEach(input => {
                 input.value = '';
-                input.style.backgroundColor = '';
-                input.classList.remove('correct-cell', 'incorrect-cell');
-                input.disabled = false;
-            });
-            const clues = document.querySelectorAll('.clue-list li');
-            clues.forEach(clue => clue.classList.remove('completed'));
-            clearHighlighting();
-            revealIButton.style.display = 'none';
-            checkButton.disabled = false;
-            checkButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            showMessage("Puzzle reset!", "bg-gray-400");
-        }
-
-        // Add event listeners for puzzle interaction
-        function addEventListeners() {
-            checkButton.addEventListener('click', checkAnswers);
-            revealIButton.addEventListener('click', revealI);
-            resetButton.addEventListener('click', resetPuzzle);
-
-            document.querySelectorAll('.clue-list li').forEach(clue => {
-                clue.addEventListener('click', () => {
-                    highlightCells(clue.dataset.clueNumber, clue.dataset.direction);
-                });
+                input.parentNode.classList.remove('correct', 'incorrect');
             });
         }
-        
-        // Initial setup
-        window.onload = function() {
-            createGrid();
-            createClueLists();
-            addEventListeners();
-        };
+
+        // Event Listeners for buttons
+        checkButton.addEventListener('click', checkAnswers);
+        hintButton.addEventListener('click', getHint);
+        resetButton.addEventListener('click', resetPuzzle);
+
+        // Initial grid creation
+        createGrid();
     </script>
 </body>
 </html>
