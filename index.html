@@ -100,6 +100,20 @@
         <h1 class="text-4xl sm:text-5xl font-extrabold text-center tracking-tight" style="color: #FFC107;">
             Crossword Puzzle
         </h1>
+        
+        <div class="p-6 mt-8 shadow-xl rounded-2xl" style="background-color: #FFC107; color: #0F3460;">
+            <h2 class="text-2xl font-bold mb-4">Instructions</h2>
+            <p class="text-lg">The objective is to fill the white squares of the grid with the correct answers to the clues. The words will intersect with one another to form the puzzle.</p>
+            <div class="mt-4">
+                <p><strong>1. Read the Clues:</strong> Start with either the "Across" or "Down" clues. The number on the clue corresponds to a numbered square on the grid.</p>
+                <p class="mt-2"><strong>2. Find the Starting Point:</strong> Locate the matching numbered square on the grid for the clue you want to solve.</p>
+                <p class="mt-2"><strong>3. Enter the Word:</strong> Type one letter into each white square. The word for an "Across" clue runs horizontally (left to right), and the word for a "Down" clue runs vertically (top to bottom).</p>
+                <p class="mt-2"><strong>4. Use Intersections:</strong> The letters you fill in for one word will help you solve the words that cross it.</p>
+                <p class="mt-2"><strong>5. Check Your Answers:</strong> When you think you've solved the puzzle, click the **Check Answers** button. It will highlight correct letters in green and incorrect letters in red.</p>
+                <p class="mt-2"><strong>6. Get a Hint:</strong> If you're stuck, click the **Reveal 'I'** button to automatically fill in all instances of the letter 'I' in the puzzle.</p>
+                <p class="mt-2"><strong>7. Reset:</strong> To start over, click the **Reset** button.</p>
+            </div>
+        </div>
 
         <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full mt-8">
             <!-- Puzzle Grid Container -->
@@ -147,27 +161,27 @@
             height: 12,
             words: [
                 {
-                    word: "ENTREPRENEUR",
-                    clue: "The name of our first module and mindset.",
-                    direction: "down",
-                    startRow: 0,
-                    startCol: 1,
-                    number: 2
-                },
-                {
                     word: "FEELING",
-                    clue: "The difference between challenge & obstacle.",
+                    clue: "The difference between challenge and obstacle.",
                     direction: "across",
-                    startRow: 1,
+                    startRow: 0,
                     startCol: 0,
                     number: 1
+                },
+                {
+                    word: "ENTREPRENEUR",
+                    clue: "The name of our first module and mindset.",
+                    direction: "across",
+                    startRow: 2,
+                    startCol: 0,
+                    number: 2
                 },
                 {
                     word: "ENVIRONMENT",
                     clue: "What has a powerful impact on your success.",
                     direction: "down",
-                    startRow: 4,
-                    startCol: 5,
+                    startRow: 0,
+                    startCol: 1,
                     number: 3
                 }
             ]
