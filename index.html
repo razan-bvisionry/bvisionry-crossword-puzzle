@@ -80,8 +80,14 @@
             transform: translate(-50%, -50%);
             z-index: 1000;
         }
-        .highlight {
+        .highlight-clue {
             background-color: #bfdbfe;
+        }
+        .correct-cell {
+            border: 2px solid #16a34a;
+        }
+        .incorrect-cell {
+            border: 2px solid #ef4444;
         }
     </style>
 </head>
@@ -109,11 +115,17 @@
                     <ol id="down-clues" class="clue-list text-gray-700"></ol>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <button id="check-button" class="button w-full sm:w-1/2 bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-600 transition-colors">
+                <div class="flex flex-col gap-4">
+                    <button id="check-button" class="button w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-600 transition-colors">
                         Check Answers
                     </button>
-                    <button id="reset-button" class="button w-full sm:w-1/2 bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-gray-300 transition-colors">
+                    <button id="reveal-letter-button" class="button w-full bg-yellow-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-yellow-600 transition-colors">
+                        Reveal Letter
+                    </button>
+                    <button id="reveal-all-button" class="button w-full bg-red-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-red-600 transition-colors">
+                        Reveal All
+                    </button>
+                    <button id="reset-button" class="button w-full bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-gray-300 transition-colors">
                         Reset
                     </button>
                 </div>
@@ -128,73 +140,73 @@
     </div>
 
     <script>
-        // Define the puzzle data: words, their starting positions, and clues.
+        // Define the puzzle data with carefully placed words for a solid grid
         const puzzleData = {
             width: 15,
             height: 15,
             words: [
                 {
-                    word: "PYTHON",
-                    clue: "A popular programming language known for its readability.",
+                    word: "PROGRAMMING",
+                    clue: "The process of creating software or applications.",
                     direction: "across",
-                    startRow: 2,
-                    startCol: 2,
+                    startRow: 3,
+                    startCol: 1,
                     number: 1
                 },
                 {
-                    word: "JAVA",
-                    clue: "Object-oriented language used for enterprise-level applications.",
-                    direction: "across",
-                    startRow: 5,
-                    startCol: 2,
+                    word: "JAVASCRIPT",
+                    clue: "A popular scripting language for web pages.",
+                    direction: "down",
+                    startRow: 1,
+                    startCol: 3,
                     number: 2
                 },
                 {
-                    word: "API",
-                    clue: "An interface that allows software applications to communicate with each other.",
+                    word: "HTML",
+                    clue: "The standard markup language for web pages.",
                     direction: "across",
-                    startRow: 8,
-                    startCol: 6,
-                    number: 3
-                },
-                {
-                    word: "CSS",
-                    clue: "Stylesheet language used for describing the presentation of a document.",
-                    direction: "across",
-                    startRow: 11,
-                    startCol: 3,
-                    number: 4
-                },
-                {
-                    word: "OOP",
-                    clue: "A programming paradigm based on the concept of 'objects'.",
-                    direction: "down",
-                    startRow: 2,
+                    startRow: 5,
                     startCol: 4,
-                    number: 5
+                    number: 3
                 },
                 {
                     word: "CODE",
                     clue: "A set of instructions written in a programming language.",
                     direction: "down",
                     startRow: 5,
-                    startCol: 3,
+                    startCol: 8,
+                    number: 4
+                },
+                {
+                    word: "SOFTWARE",
+                    clue: "A collection of instructions that tell a computer what to do.",
+                    direction: "across",
+                    startRow: 9,
+                    startCol: 6,
+                    number: 5
+                },
+                {
+                    word: "ENGINEER",
+                    clue: "A person who designs and builds complex systems.",
+                    direction: "down",
+                    startRow: 7,
+                    startCol: 6,
                     number: 6
                 },
                 {
-                    word: "REACT",
-                    clue: "A JavaScript library for building user interfaces.",
-                    direction: "down",
-                    startRow: 6,
-                    startCol: 6,
+                    word: "PYTHON",
+                    clue: "A versatile programming language known for its readability.",
+                    direction: "across",
+                    startRow: 10,
+                    startCol: 1,
                     number: 7
                 },
                 {
-                    word: "SASS",
-                    clue: "A preprocessor scripting language that is interpreted into CSS.",
+                    word: "VARIABLE",
+                    clue: "A storage location paired with an associated symbolic name.",
                     direction: "down",
-                    startRow: 8,
-                    startCol: 4,
+                    startRow: 7,
+                    startCol: 1,
                     number: 8
                 }
             ]
@@ -204,10 +216,13 @@
         const acrossCluesList = document.getElementById('across-clues');
         const downCluesList = document.getElementById('down-clues');
         const checkButton = document.getElementById('check-button');
+        const revealLetterButton = document.getElementById('reveal-letter-button');
+        const revealAllButton = document.getElementById('reveal-all-button');
         const resetButton = document.getElementById('reset-button');
         const messageBox = document.getElementById('message-box');
 
         let highlightedCells = [];
+        let activeInput = null;
 
         // Function to create the grid from the puzzle data
         function createGrid() {
@@ -323,7 +338,7 @@
                 const c = wordData.startCol + (direction === "across" ? i : 0);
                 const cell = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
                 if (cell) {
-                    cell.classList.add('highlight');
+                    cell.classList.add('highlight-clue');
                     highlightedCells.push(cell);
                 }
             }
@@ -334,14 +349,12 @@
             let allCorrect = true;
             let totalWords = puzzleData.words.length;
             let completedWords = 0;
-            let wordChecks = {};
 
             // Clear previous highlighting
             clearHighlighting();
 
             puzzleData.words.forEach(wordData => {
                 let wordCorrect = true;
-                const cellsToHighlight = [];
 
                 for (let i = 0; i < wordData.word.length; i++) {
                     const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
@@ -349,11 +362,17 @@
                     const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
 
                     if (input) {
-                        cellsToHighlight.push(input);
                         const userChar = input.value.toUpperCase();
                         const correctChar = wordData.word[i].toUpperCase();
 
-                        if (userChar !== correctChar) {
+                        input.classList.remove('correct-cell', 'incorrect-cell');
+                        if (userChar === correctChar && userChar !== '') {
+                            input.classList.add('correct-cell');
+                        } else if (userChar !== '') {
+                            input.classList.add('incorrect-cell');
+                            wordCorrect = false;
+                            allCorrect = false;
+                        } else {
                             wordCorrect = false;
                         }
                     } else {
@@ -361,27 +380,67 @@
                     }
                 }
                 
-                wordChecks[wordData.word] = wordCorrect;
-
                 if (wordCorrect) {
                     completedWords++;
-                    cellsToHighlight.forEach(cell => cell.style.backgroundColor = '#dcfce7');
                     const clueElement = document.getElementById(`clue-${wordData.direction}-${wordData.number}`);
                     if (clueElement) {
                         clueElement.classList.add('completed');
                     }
-                } else {
-                    allCorrect = false;
-                    cellsToHighlight.forEach(cell => cell.style.backgroundColor = '#fee2e2');
                 }
-                highlightedCells.push(...cellsToHighlight);
             });
 
             if (allCorrect) {
                 showMessage("Congratulations! You've solved the puzzle!", "bg-green-500");
             } else {
-                showMessage(`You've completed ${completedWords} out of ${totalWords} words. Keep trying!`, "bg-yellow-500");
+                showMessage(`You've completed ${completedWords} out of ${totalWords} words. Check the highlighted cells!`, "bg-yellow-500");
             }
+        }
+        
+        // Function to reveal a single letter in the currently focused cell
+        function revealLetter() {
+            if (!activeInput) {
+                showMessage("Click on a cell to select it first.", "bg-gray-500");
+                return;
+            }
+
+            const row = activeInput.dataset.row;
+            const col = activeInput.dataset.col;
+
+            const wordDataAcross = puzzleData.words.find(w => w.direction === 'across' && w.startRow == row && w.startCol <= col && (w.startCol + w.word.length - 1) >= col);
+            const wordDataDown = puzzleData.words.find(w => w.direction === 'down' && w.startCol == col && w.startRow <= row && (w.startRow + w.word.length - 1) >= row);
+
+            let correctChar = '';
+            if (wordDataAcross) {
+                correctChar = wordDataAcross.word[col - wordDataAcross.startCol];
+            } else if (wordDataDown) {
+                correctChar = wordDataDown.word[row - wordDataDown.startRow];
+            }
+
+            if (correctChar) {
+                activeInput.value = correctChar.toUpperCase();
+                activeInput.classList.add('correct-cell');
+                activeInput.disabled = true;
+                showMessage("A letter has been revealed!", "bg-green-500");
+            }
+        }
+
+        // Function to reveal all answers
+        function revealAllAnswers() {
+            puzzleData.words.forEach(wordData => {
+                for (let i = 0; i < wordData.word.length; i++) {
+                    const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
+                    const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
+                    const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
+                    if (input) {
+                        input.value = wordData.word[i].toUpperCase();
+                        input.classList.add('correct-cell');
+                        input.disabled = true;
+                    }
+                }
+            });
+            const clues = document.querySelectorAll('.clue-list li');
+            clues.forEach(clue => clue.classList.add('completed'));
+            showMessage("All answers have been revealed!", "bg-red-500");
         }
 
         // Function to show a temporary message
@@ -397,9 +456,7 @@
 
         // Function to clear any highlighting on the grid
         function clearHighlighting() {
-            highlightedCells.forEach(cell => cell.style.backgroundColor = '');
-            highlightedCells.forEach(cell => cell.classList.remove('highlight'));
-            highlightedCells = [];
+            document.querySelectorAll('.highlight-clue').forEach(cell => cell.classList.remove('highlight-clue'));
         }
 
         // Function to reset the puzzle
@@ -408,19 +465,31 @@
             inputs.forEach(input => {
                 input.value = '';
                 input.style.backgroundColor = '';
+                input.classList.remove('correct-cell', 'incorrect-cell');
+                input.disabled = false;
             });
             const clues = document.querySelectorAll('.clue-list li');
             clues.forEach(clue => clue.classList.remove('completed'));
+            clearHighlighting();
             showMessage("Puzzle reset!", "bg-gray-400");
         }
 
         // Add event listeners for puzzle interaction
         function addEventListeners() {
             checkButton.addEventListener('click', checkAnswers);
+            revealLetterButton.addEventListener('click', revealLetter);
+            revealAllButton.addEventListener('click', revealAllAnswers);
             resetButton.addEventListener('click', resetPuzzle);
+
             document.querySelectorAll('.clue-list li').forEach(clue => {
                 clue.addEventListener('click', () => {
                     highlightCells(clue.dataset.clueNumber, clue.dataset.direction);
+                });
+            });
+
+            document.querySelectorAll('.puzzle-cell').forEach(input => {
+                input.addEventListener('focus', (e) => {
+                    activeInput = e.target;
                 });
             });
         }
