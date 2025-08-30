@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BVisionRY Crossword Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F8F8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            text-align: center;
+        }
+        .puzzle-grid {
+            display: grid;
+            gap: 2px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            user-select: none;
+            position: relative;
+        }
+        .grid-cell.filled {
+            background-color: #FFC107;
+        }
+        .grid-cell.empty {
+            background-color: #0F3460;
+        }
+        input[type="text"] {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: none;
+            background-color: transparent;
+            outline: none;
+            color: #0F3460;
+        }
+        .clues-list {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        .clues-list h3 {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .clues-list li {
+            font-size: 0.95rem;
+            color: #4b5563;
+        }
+        .btn-primary {
+            @apply px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-[#0F3460] text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0F3460] focus:ring-offset-2;
+        }
+        .btn-secondary {
+            @apply px-6 py-3 rounded-full font-semibold transition-all duration-300 bg-[#FFC107] text-[#0F3460] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#FFC107] focus:ring-offset-2;
+        }
+        #message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+        }
+        .success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+<div class="container">
+    <h1 class="text-3xl font-bold text-[#0F3460]">BVisionRY Crossword Challenge</h1>
+    <p class="text-lg text-gray-600 mt-2 mb-4">
+        Can you solve our leadership crossword?
+    </p>
+
+    <div class="clues-list">
+        <h3>Across</h3>
+        <ol class="list-decimal pl-5 space-y-1">
+            <li>(12-letters) The name of our first module and mindset.</li>
+            <li>(7-letters) The difference between an obstacle and a challenge.</li>
+        </ol>
+        <h3 class="mt-4">Down</h3>
+        <ol class="list-decimal pl-5 space-y-1">
+            <li>(11-letters) What has a powerful impact on your success.</li>
+        </ol>
+    </div>
+
+    <div class="puzzle-grid" id="crossword-grid">
+        <!-- Grid cells will be generated here by JavaScript -->
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 w-full">
+        <button id="check-btn" class="btn-primary flex-1">Check My Answers</button>
+        <button id="hint-btn" class="btn-secondary flex-1">Reveal a Hint</button>
+    </div>
+    
+    <div id="message" class="hidden"></div>
+</div>
+
+<script>
+    const crosswordData = {
+        words: [
+            { word: "ENTREPRENEUR", clue: "The name of our first module and mindset.", startRow: 0, startCol: 0, direction: 'across', number: 1 },
+            { word: "FEELING", clue: "The difference between an obstacle and a challenge.", startRow: 3, startCol: 0, direction: 'across', number: 2 },
+            { word: "ENVIRONMENT", clue: "What has a powerful impact on your success.", startRow: 0, startCol: 4, direction: 'down', number: 3 },
+        ]
+    };
+
+    const gridContainer = document.getElementById('crossword-grid');
+    const checkButton = document.getElementById('check-btn');
+    const hintButton = document.getElementById('hint-btn');
+    const messageBox = document.getElementById('message');
+
+    const generateCrosswordGrid = () => {
+        const grid = [];
+        let maxRow = 0;
+        let maxCol = 0;
+        
+        crosswordData.words.forEach(wordData => {
+            const { word, startRow, startCol, direction } = wordData;
+            if (direction === 'across') {
+                maxCol = Math.max(maxCol, startCol + word.length);
+                maxRow = Math.max(maxRow, startRow + 1);
+            } else {
+                maxRow = Math.max(maxRow, startRow + word.length);
+                maxCol = Math.max(maxCol, startCol + 1);
+            }
+        });
+        
+        for (let r = 0; r < maxRow; r++) {
+            grid[r] = [];
+            for (let c = 0; c < maxCol; c++) {
+                grid[r][c] = { value: '', isWord: false, number: null };
+            }
+        }
+
+        crosswordData.words.forEach(wordData => {
+            const { word, startRow, startCol, direction, number } = wordData;
+            word.split('').forEach((char, i) => {
+                const r = direction === 'across' ? startRow : startRow + i;
+                const c = direction === 'across' ? startCol + i : startCol;
+                
+                grid[r][c].value = char;
+                grid[r][c].isWord = true;
+                if (i === 0) {
+                    grid[r][c].number = number;
+                }
+            });
+        });
+
+        let gridHTML = '';
+        for (let r = 0; r < maxRow; r++) {
+            for (let c = 0; c < maxCol; c++) {
+                const cell = grid[r][c];
+                if (cell.isWord) {
+                    gridHTML += `
+                        <div class="grid-cell relative">
+                            ${cell.number ? `<span class="absolute top-0 left-0 text-xs text-gray-500 font-medium p-1">${cell.number}</span>` : ''}
+                            <input type="text" maxlength="1" class="w-full h-full text-center text-xl uppercase font-bold" data-row="${r}" data-col="${c}">
+                        </div>
+                    `;
+                } else {
+                    gridHTML += `<div class="grid-cell empty"></div>`;
+                }
+            }
+        }
+        gridContainer.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
+        gridContainer.innerHTML = gridHTML;
+
+        // Add event listeners for auto-filling intersecting letters
+        document.querySelectorAll('#crossword-grid input').forEach(input => {
+            input.addEventListener('input', (event) => {
+                const row = parseInt(event.target.dataset.row);
+                const col = parseInt(event.target.dataset.col);
+                const value = event.target.value.toUpperCase();
+
+                // Check for intersections and fill in the other input
+                crosswordData.words.forEach(wordData => {
+                    const { word, startRow, startCol, direction } = wordData;
+                    const endRow = direction === 'across' ? startRow : startRow + word.length - 1;
+                    const endCol = direction === 'across' ? startCol + word.length - 1 : startCol;
+
+                    if (row >= startRow && row <= endRow && col >= startCol && col <= endCol) {
+                        const wordIndex = direction === 'across' ? col - startCol : row - startRow;
+                        
+                        // Check other words for intersection at the same cell
+                        crosswordData.words.forEach(otherWordData => {
+                            if (otherWordData === wordData) return;
+                            const otherEndRow = otherWordData.direction === 'across' ? otherWordData.startRow : otherWordData.startRow + otherWordData.word.length - 1;
+                            const otherEndCol = otherWordData.direction === 'across' ? otherWordData.startCol + otherWordData.word.length - 1 : otherWordData.startCol;
+
+                            if (row >= otherWordData.startRow && row <= otherEndRow && col >= otherWordData.startCol && col <= otherEndCol) {
+                                const otherInput = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                                if (otherInput && otherInput !== event.target) {
+                                    otherInput.value = value;
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    };
+
+    const checkAnswers = () => {
+        let allCorrect = true;
+        let incorrectWords = [];
+        
+        crosswordData.words.forEach(wordData => {
+            const { word, startRow, startCol, direction } = wordData;
+            let currentWord = '';
+            word.split('').forEach((char, i) => {
+                const r = direction === 'across' ? startRow : startRow + i;
+                const c = direction === 'across' ? startCol + i : startCol;
+                const inputElement = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (inputElement) {
+                    currentWord += inputElement.value.toUpperCase();
+                }
+            });
+            
+            if (currentWord !== word.toUpperCase()) {
+                allCorrect = false;
+                incorrectWords.push(word);
+            }
+        });
+
+        messageBox.classList.remove('hidden', 'success', 'error');
+        if (allCorrect) {
+            messageBox.classList.add('success');
+            messageBox.innerHTML = `
+                <p>Congratulations! You solved the puzzle! 🎉</p>
+                <p class="mt-4">
+                    Challenge your friends to solve the puzzle and share it with your network!
+                </p>
+                <p class="mt-2">
+                    The grand reward for this challenge will be announced at the end of this episode!
+                </p>
+            `;
+        } else {
+            messageBox.classList.add('error');
+            messageBox.innerHTML = `
+                <p>Oops! Looks like some answers are incorrect. Please try again.</p>
+                <p>Incorrect answers: ${incorrectWords.join(', ').toUpperCase()}</p>
+            `;
+        }
+    };
+
+    const revealHint = () => {
+        const inputElement = document.querySelector(`input[data-row="3"][data-col="4"]`);
+        if (inputElement) {
+            inputElement.value = 'I';
+            messageBox.classList.remove('hidden', 'success', 'error');
+            messageBox.classList.add('success');
+            messageBox.innerHTML = `
+                <p>Hint revealed! The letter 'I' has been added to the puzzle.</p>
+                <p class="mt-2">
+                    Be sure to save this letter and its coordinates. It will be important later to unlock a hidden word!
+                </p>
+            `;
+        }
+    };
+
+    checkButton.addEventListener('click', checkAnswers);
+    hintButton.addEventListener('click', revealHint);
+    window.onload = generateCrosswordGrid;
+
+</script>
+
+</body>
+</html>
