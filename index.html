@@ -11,8 +11,8 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
+            background-color: #0F3460;
+            color: #F8F8F8;
         }
         .puzzle-grid {
             border-collapse: collapse;
@@ -24,7 +24,7 @@
             height: 40px;
             text-align: center;
             vertical-align: middle;
-            border: 1px solid #d1d5db;
+            border: 1px solid #FFC107;
             padding: 0;
             position: relative;
         }
@@ -40,10 +40,14 @@
             background-color: transparent;
             -webkit-appearance: none;
             -moz-appearance: textfield;
+            color: #0F3460;
         }
         .puzzle-grid .bg-black {
-            background-color: #1f2937;
-            border: 1px solid #1f2937;
+            background-color: #0F3460;
+            border: 1px solid #0F3460;
+        }
+        .puzzle-grid .bg-white {
+            background-color: #F8F8F8;
         }
         .cell-number {
             position: absolute;
@@ -51,7 +55,7 @@
             left: 2px;
             font-size: 0.65rem;
             font-weight: 700;
-            color: #4b5563;
+            color: #0F3460;
         }
         .clue-list li {
             margin-bottom: 0.5rem;
@@ -59,17 +63,17 @@
         }
         .clue-list li.completed {
             text-decoration: line-through;
-            color: #6b7280;
+            color: #FFC107;
         }
         .button {
             transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
             transform: translateY(0);
         }
-        .button:hover {
+        .button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        .button:active {
+        .button:active:not(:disabled) {
             transform: translateY(1px);
             box-shadow: none;
         }
@@ -81,10 +85,10 @@
             z-index: 1000;
         }
         .highlight-clue {
-            background-color: #bfdbfe;
+            background-color: #FFC107 !important;
         }
         .correct-cell {
-            border: 2px solid #16a34a;
+            border: 2px solid #FFC107;
         }
         .incorrect-cell {
             border: 2px solid #ef4444;
@@ -93,36 +97,36 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="max-w-7xl w-full">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-gray-800 mb-6 sm:mb-8 tracking-tight">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center tracking-tight" style="color: #FFC107;">
             Crossword Puzzle
         </h1>
 
-        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full">
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full mt-8">
             <!-- Puzzle Grid Container -->
             <div id="crossword-container" class="flex-grow flex items-center justify-center p-4 bg-white shadow-xl rounded-2xl">
                 <!-- The puzzle grid will be generated here by JavaScript -->
             </div>
 
             <!-- Clues and Controls Container -->
-            <div class="flex flex-col gap-8 flex-grow lg:flex-grow-0 lg:w-96 p-6 bg-white shadow-xl rounded-2xl">
+            <div class="flex flex-col gap-8 flex-grow lg:flex-grow-0 lg:w-96 p-6 shadow-xl rounded-2xl" style="background-color: #FFC107; color: #0F3460;">
                 <div>
                     <h2 class="text-2xl font-bold mb-4">Across</h2>
-                    <ol id="across-clues" class="clue-list text-gray-700"></ol>
+                    <ol id="across-clues" class="clue-list"></ol>
                 </div>
                 
                 <div>
                     <h2 class="text-2xl font-bold mb-4">Down</h2>
-                    <ol id="down-clues" class="clue-list text-gray-700"></ol>
+                    <ol id="down-clues" class="clue-list"></ol>
                 </div>
 
                 <div class="flex flex-col gap-4">
-                    <button id="check-button" class="button w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-600 transition-colors">
+                    <button id="check-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #0F3460; color: #F8F8F8;">
                         Check Answers
                     </button>
-                    <button id="reveal-all-button" class="button w-full bg-red-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-red-600 transition-colors">
-                        Reveal All
+                    <button id="reveal-i-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #0F3460; color: #F8F8F8; display: none;">
+                        Reveal 'I'
                     </button>
-                    <button id="reset-button" class="button w-full bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-gray-300 transition-colors">
+                    <button id="reset-button" class="button w-full font-bold py-3 px-6 rounded-xl shadow-lg" style="background-color: #F8F8F8; color: #0F3460;">
                         Reset
                     </button>
                 </div>
@@ -130,81 +134,41 @@
         </div>
 
         <!-- Message Box for feedback -->
-        <div id="message-box" class="message-box hidden p-6 bg-green-500 text-white font-bold rounded-2xl shadow-2xl z-50">
+        <div id="message-box" class="message-box hidden p-6 font-bold rounded-2xl shadow-2xl z-50 transition-all duration-500 text-center">
             <!-- Messages will be displayed here -->
         </div>
 
     </div>
 
     <script>
-        // Define the puzzle data with carefully placed words for a solid grid
+        // Define the puzzle data
         const puzzleData = {
-            width: 10,
-            height: 10,
+            width: 13,
+            height: 11,
             words: [
                 {
-                    word: "CUBES",
-                    clue: "Three-dimensional squares",
+                    word: "ENTREPRENEUR",
+                    clue: "The name of our first module and mindset.",
                     direction: "across",
                     startRow: 0,
                     startCol: 0,
                     number: 1
                 },
                 {
-                    word: "BETA",
-                    clue: "The second letter of the Greek alphabet",
-                    direction: "down",
-                    startRow: 0,
-                    startCol: 2,
+                    word: "FEELING",
+                    clue: "The difference between challenge & obstacle.",
+                    direction: "across",
+                    startRow: 4,
+                    startCol: 0,
                     number: 2
                 },
                 {
-                    word: "MATH",
-                    clue: "Subject involving numbers and equations",
-                    direction: "across",
-                    startRow: 2,
-                    startCol: 0,
+                    word: "ENVIRONMENT",
+                    clue: "What has a powerful impact on your success.",
+                    direction: "down",
+                    startRow: 0,
+                    startCol: 4,
                     number: 3
-                },
-                {
-                    word: "TETRIS",
-                    clue: "A classic tile-matching video game",
-                    direction: "down",
-                    startRow: 2,
-                    startCol: 3,
-                    number: 4
-                },
-                {
-                    word: "PI",
-                    clue: "The ratio of a circle's circumference to its diameter",
-                    direction: "across",
-                    startRow: 4,
-                    startCol: 1,
-                    number: 5
-                },
-                {
-                    word: "PLOT",
-                    clue: "The main events of a play, novel, or movie",
-                    direction: "down",
-                    startRow: 4,
-                    startCol: 1,
-                    number: 6
-                },
-                {
-                    word: "ZERO",
-                    clue: "The number 0",
-                    direction: "across",
-                    startRow: 6,
-                    startCol: 5,
-                    number: 7
-                },
-                {
-                    word: "ROBOT",
-                    clue: "A machine capable of carrying out a complex series of actions automatically",
-                    direction: "down",
-                    startRow: 3,
-                    startCol: 8,
-                    number: 8
                 }
             ]
         };
@@ -213,7 +177,7 @@
         const acrossCluesList = document.getElementById('across-clues');
         const downCluesList = document.getElementById('down-clues');
         const checkButton = document.getElementById('check-button');
-        const revealAllButton = document.getElementById('reveal-all-button');
+        const revealIButton = document.getElementById('reveal-i-button');
         const resetButton = document.getElementById('reset-button');
         const messageBox = document.getElementById('message-box');
 
@@ -249,7 +213,7 @@
 
             // Create the HTML table
             const table = document.createElement('table');
-            table.className = "puzzle-grid";
+            table.className = "puzzle-grid rounded-xl overflow-hidden";
 
             for (let r = 0; r < puzzleData.height; r++) {
                 const row = document.createElement('tr');
@@ -261,7 +225,7 @@
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.maxLength = 1;
-                        input.className = "puzzle-cell text-gray-900";
+                        input.className = "puzzle-cell";
                         input.dataset.row = r;
                         input.dataset.col = c;
                         
@@ -271,7 +235,7 @@
                             numberSpan.textContent = cellData.number;
                             cell.appendChild(numberSpan);
                         }
-
+                        cell.classList.add('bg-white');
                         cell.appendChild(input);
                     } else {
                         cell.className = "bg-black";
@@ -333,8 +297,6 @@
         // Function to check the answers
         function checkAnswers() {
             let allCorrect = true;
-            let totalWords = puzzleData.words.length;
-            let completedWords = 0;
 
             // Clear previous highlighting
             document.querySelectorAll('.puzzle-cell').forEach(input => {
@@ -353,22 +315,20 @@
                         const userChar = input.value.toUpperCase();
                         const correctChar = wordData.word[i].toUpperCase();
 
-                        if (userChar === correctChar && userChar !== '') {
+                        if (userChar === correctChar) {
                             input.classList.add('correct-cell');
-                        } else if (userChar !== '') {
+                        } else {
                             input.classList.add('incorrect-cell');
                             wordCorrect = false;
                             allCorrect = false;
-                        } else {
-                            wordCorrect = false;
                         }
                     } else {
                         wordCorrect = false;
+                        allCorrect = false;
                     }
                 }
                 
                 if (wordCorrect) {
-                    completedWords++;
                     const clueElement = document.getElementById(`clue-${wordData.direction}-${wordData.number}`);
                     if (clueElement) {
                         clueElement.classList.add('completed');
@@ -377,34 +337,40 @@
             });
 
             if (allCorrect) {
-                showMessage("Congratulations! You've solved the puzzle!", "bg-green-500");
+                showMessage("Congratulations!", "bg-green-500", "Share with your network!");
+                revealIButton.style.display = 'block';
+                checkButton.disabled = true;
+                checkButton.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
-                showMessage(`You've completed ${completedWords} out of ${totalWords} words. Check the highlighted cells!`, "bg-yellow-500");
+                showMessage("Try again!", "bg-red-500");
             }
         }
         
-        // Function to reveal all answers
-        function revealAllAnswers() {
+        // Function to reveal the letter 'I'
+        function revealI() {
             puzzleData.words.forEach(wordData => {
                 for (let i = 0; i < wordData.word.length; i++) {
-                    const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
-                    const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
-                    const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                    if (input) {
-                        input.value = wordData.word[i].toUpperCase();
-                        input.classList.add('correct-cell');
-                        input.disabled = true;
+                    if (wordData.word[i].toUpperCase() === 'I') {
+                        const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
+                        const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
+                        const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
+                        if (input) {
+                            input.value = 'I';
+                            input.classList.add('correct-cell');
+                            input.disabled = true;
+                        }
                     }
                 }
             });
-            const clues = document.querySelectorAll('.clue-list li');
-            clues.forEach(clue => clue.classList.add('completed'));
-            showMessage("All answers have been revealed!", "bg-red-500");
+            showMessage("The letter 'I' has been revealed.", "bg-blue-500");
         }
-
+        
         // Function to show a temporary message
-        function showMessage(message, colorClass) {
-            messageBox.textContent = message;
+        function showMessage(message, colorClass, secondaryMessage = "") {
+            messageBox.innerHTML = `<span class="text-xl">${message}</span>`;
+            if (secondaryMessage) {
+                messageBox.innerHTML += `<br><span class="text-sm mt-2">${secondaryMessage}</span>`;
+            }
             messageBox.className = `message-box p-6 font-bold rounded-2xl shadow-2xl z-50 transition-all duration-500 ${colorClass}`;
             messageBox.classList.remove('hidden');
 
@@ -430,13 +396,16 @@
             const clues = document.querySelectorAll('.clue-list li');
             clues.forEach(clue => clue.classList.remove('completed'));
             clearHighlighting();
+            revealIButton.style.display = 'none';
+            checkButton.disabled = false;
+            checkButton.classList.remove('opacity-50', 'cursor-not-allowed');
             showMessage("Puzzle reset!", "bg-gray-400");
         }
 
         // Add event listeners for puzzle interaction
         function addEventListeners() {
             checkButton.addEventListener('click', checkAnswers);
-            revealAllButton.addEventListener('click', revealAllAnswers);
+            revealIButton.addEventListener('click', revealI);
             resetButton.addEventListener('click', resetPuzzle);
 
             document.querySelectorAll('.clue-list li').forEach(clue => {
@@ -452,7 +421,6 @@
             createClueLists();
             addEventListeners();
         };
-
     </script>
 </body>
 </html>
