@@ -55,6 +55,7 @@
         }
         .clue-list li {
             margin-bottom: 0.5rem;
+            cursor: pointer;
         }
         .clue-list li.completed {
             text-decoration: line-through;
@@ -190,7 +191,6 @@
         const resetButton = document.getElementById('reset-button');
         const messageBox = document.getElementById('message-box');
 
-        let isCorrect = {};
         let highlightedCells = [];
 
         // Function to create the grid from the puzzle data
@@ -204,14 +204,12 @@
                 let r = wordData.startRow;
                 let c = wordData.startCol;
 
-                // Mark the starting cell with the number
                 if (grid[r][c] === null) {
                     grid[r][c] = { number: wordData.number };
                 } else {
                     grid[r][c].number = wordData.number;
                 }
 
-                // Fill the path of the word with a placeholder
                 for (let i = 0; i < wordData.word.length; i++) {
                     if (wordData.direction === "across") {
                         grid[r][c + i] = grid[r][c + i] || {};
@@ -236,25 +234,20 @@
                     const cellData = grid[r][c];
 
                     if (cellData) {
-                        // Create input for letter
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.maxLength = 1;
                         input.className = "puzzle-cell text-gray-900";
                         input.dataset.row = r;
                         input.dataset.col = c;
-
-                        // Add data attributes for word/clue lookup
-                        if (cellData.wordAcross) {
-                            input.dataset.wordAcross = cellData.wordAcross;
+                        
+                        if (cellData.clueNumberAcross) {
                             input.dataset.clueNumberAcross = cellData.clueNumberAcross;
                         }
-                        if (cellData.wordDown) {
-                            input.dataset.wordDown = cellData.wordDown;
+                        if (cellData.clueNumberDown) {
                             input.dataset.clueNumberDown = cellData.clueNumberDown;
                         }
 
-                        // Add number if it's a starting cell
                         if (cellData.number) {
                             const numberSpan = document.createElement('span');
                             numberSpan.className = "cell-number";
@@ -264,7 +257,6 @@
 
                         cell.appendChild(input);
                     } else {
-                        // Black cell
                         cell.className = "bg-black";
                     }
 
@@ -288,6 +280,8 @@
                 const li = document.createElement('li');
                 li.id = `clue-across-${clue.number}`;
                 li.textContent = `${clue.number}. ${clue.clue}`;
+                li.dataset.clueNumber = clue.number;
+                li.dataset.direction = 'across';
                 acrossCluesList.appendChild(li);
             });
 
@@ -295,15 +289,36 @@
                 const li = document.createElement('li');
                 li.id = `clue-down-${clue.number}`;
                 li.textContent = `${clue.number}. ${clue.clue}`;
+                li.dataset.clueNumber = clue.number;
+                li.dataset.direction = 'down';
                 downCluesList.appendChild(li);
             });
         }
 
+        // Function to highlight cells based on a clue click
+        function highlightCells(clueNumber, direction) {
+            clearHighlighting();
+            
+            const wordData = puzzleData.words.find(w => w.number == clueNumber && w.direction === direction);
+            if (!wordData) return;
+
+            for (let i = 0; i < wordData.word.length; i++) {
+                const r = wordData.startRow + (direction === "down" ? i : 0);
+                const c = wordData.startCol + (direction === "across" ? i : 0);
+                const cell = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
+                if (cell) {
+                    cell.classList.add('highlight');
+                    highlightedCells.push(cell);
+                }
+            }
+        }
+        
         // Function to check the answers
         function checkAnswers() {
             let allCorrect = true;
             let totalWords = puzzleData.words.length;
             let completedWords = 0;
+            let wordChecks = {};
 
             // Clear previous highlighting
             clearHighlighting();
@@ -313,35 +328,34 @@
                 const cellsToHighlight = [];
 
                 for (let i = 0; i < wordData.word.length; i++) {
-                    let r = wordData.startRow + (wordData.direction === "down" ? i : 0);
-                    let c = wordData.startCol + (wordData.direction === "across" ? i : 0);
-
+                    const r = wordData.startRow + (wordData.direction === "down" ? i : 0);
+                    const c = wordData.startCol + (wordData.direction === "across" ? i : 0);
                     const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
+
                     if (input) {
                         cellsToHighlight.push(input);
                         const userChar = input.value.toUpperCase();
                         const correctChar = wordData.word[i].toUpperCase();
 
-                        if (userChar !== correctChar || userChar === "") {
+                        if (userChar !== correctChar) {
                             wordCorrect = false;
                         }
+                    } else {
+                        wordCorrect = false;
                     }
                 }
                 
+                wordChecks[wordData.word] = wordCorrect;
+
                 if (wordCorrect) {
                     completedWords++;
-                    isCorrect[wordData.word] = true;
-                    // Highlight correct cells in green
                     cellsToHighlight.forEach(cell => cell.style.backgroundColor = '#dcfce7');
-                    // Mark clue as completed
                     const clueElement = document.getElementById(`clue-${wordData.direction}-${wordData.number}`);
                     if (clueElement) {
                         clueElement.classList.add('completed');
                     }
                 } else {
                     allCorrect = false;
-                    isCorrect[wordData.word] = false;
-                    // Highlight incorrect cells in red
                     cellsToHighlight.forEach(cell => cell.style.backgroundColor = '#fee2e2');
                 }
                 highlightedCells.push(...cellsToHighlight);
@@ -368,6 +382,7 @@
         // Function to clear any highlighting on the grid
         function clearHighlighting() {
             highlightedCells.forEach(cell => cell.style.backgroundColor = '');
+            highlightedCells.forEach(cell => cell.classList.remove('highlight'));
             highlightedCells = [];
         }
 
@@ -378,7 +393,6 @@
                 input.value = '';
                 input.style.backgroundColor = '';
             });
-            isCorrect = {};
             const clues = document.querySelectorAll('.clue-list li');
             clues.forEach(clue => clue.classList.remove('completed'));
             showMessage("Puzzle reset!", "bg-gray-400");
@@ -388,47 +402,11 @@
         function addEventListeners() {
             checkButton.addEventListener('click', checkAnswers);
             resetButton.addEventListener('click', resetPuzzle);
-            crosswordContainer.addEventListener('focusin', handleFocus);
-            crosswordContainer.addEventListener('focusout', handleBlur);
-        }
-
-        // Highlight cells of the selected word
-        function handleFocus(event) {
-            const input = event.target;
-            clearHighlighting();
-
-            if (input.dataset.wordAcross) {
-                // Highlight across word
-                const wordData = puzzleData.words.find(w => w.word === input.dataset.wordAcross);
-                for (let i = 0; i < wordData.word.length; i++) {
-                    const r = wordData.startRow;
-                    const c = wordData.startCol + i;
-                    const cell = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                    if (cell) {
-                        cell.classList.add('highlight');
-                        highlightedCells.push(cell);
-                    }
-                }
-            }
-            if (input.dataset.wordDown) {
-                // Highlight down word
-                const wordData = puzzleData.words.find(w => w.word === input.dataset.wordDown);
-                for (let i = 0; i < wordData.word.length; i++) {
-                    const r = wordData.startRow + i;
-                    const c = wordData.startCol;
-                    const cell = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                    if (cell) {
-                        cell.classList.add('highlight');
-                        highlightedCells.push(cell);
-                    }
-                }
-            }
-        }
-
-        function handleBlur(event) {
-            // Clear highlighting when focus is lost
-            // A small delay to allow for clicking on a new input
-            setTimeout(clearHighlighting, 10);
+            document.querySelectorAll('.clue-list li').forEach(clue => {
+                clue.addEventListener('click', () => {
+                    highlightCells(clue.dataset.clueNumber, clue.dataset.direction);
+                });
+            });
         }
         
         // Initial setup
