@@ -119,12 +119,6 @@
                     <button id="check-button" class="button w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-600 transition-colors">
                         Check Answers
                     </button>
-                    <button id="reveal-letter-button" class="button w-full bg-yellow-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-yellow-600 transition-colors">
-                        Reveal Letter
-                    </button>
-                    <button id="reveal-word-button" class="button w-full bg-orange-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-orange-600 transition-colors">
-                        Reveal Word
-                    </button>
                     <button id="reveal-all-button" class="button w-full bg-red-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-red-600 transition-colors">
                         Reveal All
                     </button>
@@ -219,14 +213,11 @@
         const acrossCluesList = document.getElementById('across-clues');
         const downCluesList = document.getElementById('down-clues');
         const checkButton = document.getElementById('check-button');
-        const revealLetterButton = document.getElementById('reveal-letter-button');
-        const revealWordButton = document.getElementById('reveal-word-button');
         const revealAllButton = document.getElementById('reveal-all-button');
         const resetButton = document.getElementById('reset-button');
         const messageBox = document.getElementById('message-box');
 
         let highlightedCells = [];
-        let activeInput = null;
 
         // Function to create the grid from the puzzle data
         function createGrid() {
@@ -249,11 +240,9 @@
                     if (wordData.direction === "across") {
                         grid[r][c + i] = grid[r][c + i] || {};
                         grid[r][c + i].wordAcross = wordData.word;
-                        grid[r][c + i].clueNumberAcross = wordData.number;
                     } else { // "down"
                         grid[r + i][c] = grid[r + i][c] || {};
                         grid[r + i][c].wordDown = wordData.word;
-                        grid[r + i][c].clueNumberDown = wordData.number;
                     }
                 }
             });
@@ -276,13 +265,6 @@
                         input.dataset.row = r;
                         input.dataset.col = c;
                         
-                        if (cellData.clueNumberAcross) {
-                            input.dataset.clueNumberAcross = cellData.clueNumberAcross;
-                        }
-                        if (cellData.clueNumberDown) {
-                            input.dataset.clueNumberDown = cellData.clueNumberDown;
-                        }
-
                         if (cellData.number) {
                             const numberSpan = document.createElement('span');
                             numberSpan.className = "cell-number";
@@ -401,76 +383,6 @@
             }
         }
         
-        // Function to reveal a single letter in the currently focused cell
-        function revealLetter() {
-            if (!activeInput) {
-                showMessage("Click on a cell to select it first.", "bg-gray-500");
-                return;
-            }
-
-            const row = parseInt(activeInput.dataset.row);
-            const col = parseInt(activeInput.dataset.col);
-
-            let correctChar = '';
-            
-            // Find the correct word data for the current cell
-            const wordDataAcross = puzzleData.words.find(w => w.direction === 'across' && w.startRow === row && col >= w.startCol && col < w.startCol + w.word.length);
-            const wordDataDown = puzzleData.words.find(w => w.direction === 'down' && w.startCol === col && row >= w.startRow && row < w.startRow + w.word.length);
-
-            if (wordDataAcross) {
-                correctChar = wordDataAcross.word[col - wordDataAcross.startCol];
-            } else if (wordDataDown) {
-                correctChar = wordDataDown.word[row - wordDataDown.startRow];
-            }
-
-            if (correctChar) {
-                activeInput.value = correctChar.toUpperCase();
-                activeInput.classList.add('correct-cell');
-                showMessage("A letter has been revealed!", "bg-green-500");
-            }
-        }
-
-        // Function to reveal the entire word for the currently focused cell
-        function revealWord() {
-            if (!activeInput) {
-                showMessage("Click on a cell to select it first.", "bg-gray-500");
-                return;
-            }
-
-            const row = parseInt(activeInput.dataset.row);
-            const col = parseInt(activeInput.dataset.col);
-
-            const wordAcross = puzzleData.words.find(w => w.direction === 'across' && w.startRow === row && col >= w.startCol && col < w.startCol + w.word.length);
-            const wordDown = puzzleData.words.find(w => w.direction === 'down' && w.startCol === col && row >= w.startRow && row < w.startRow + w.word.length);
-            
-            let wordToReveal = null;
-            let directionToReveal = '';
-
-            // Prioritize horizontal reveal if the word is found
-            if (wordAcross) {
-                wordToReveal = wordAcross;
-                directionToReveal = 'across';
-            } else if (wordDown) {
-                wordToReveal = wordDown;
-                directionToReveal = 'down';
-            }
-
-            if (wordToReveal) {
-                for (let i = 0; i < wordToReveal.word.length; i++) {
-                    const r = wordToReveal.startRow + (directionToReveal === 'down' ? i : 0);
-                    const c = wordToReveal.startCol + (directionToReveal === 'across' ? i : 0);
-                    const input = document.querySelector(`input[data-row='${r}'][data-col='${c}']`);
-                    if (input) {
-                        input.value = wordToReveal.word[i].toUpperCase();
-                        input.classList.add('correct-cell');
-                    }
-                }
-                showMessage("The word has been revealed!", "bg-orange-500");
-            } else {
-                showMessage("Could not find a word at the current cell.", "bg-gray-500");
-            }
-        }
-
         // Function to reveal all answers
         function revealAllAnswers() {
             puzzleData.words.forEach(wordData => {
@@ -524,20 +436,12 @@
         // Add event listeners for puzzle interaction
         function addEventListeners() {
             checkButton.addEventListener('click', checkAnswers);
-            revealLetterButton.addEventListener('click', revealLetter);
-            revealWordButton.addEventListener('click', revealWord);
             revealAllButton.addEventListener('click', revealAllAnswers);
             resetButton.addEventListener('click', resetPuzzle);
 
             document.querySelectorAll('.clue-list li').forEach(clue => {
                 clue.addEventListener('click', () => {
                     highlightCells(clue.dataset.clueNumber, clue.dataset.direction);
-                });
-            });
-
-            document.querySelectorAll('.puzzle-cell').forEach(input => {
-                input.addEventListener('focus', (e) => {
-                    activeInput = e.target;
                 });
             });
         }
